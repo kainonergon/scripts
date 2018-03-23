@@ -1,0 +1,104 @@
+#!/bin/dash
+
+Y_OFFSET=1	# vertical position in lines
+MAX_LINES=20
+DISABLE_CAT_INPUTLINE="#mainbox {children: [ listview ];}"	# unset it to have input line on categories
+# DISABLE_CAT_INPUTLINE=""
+
+THEME="	#window {
+			location: northwest;
+			anchor: northwest;
+			y-offset: ${Y_OFFSET}em;}
+		#listview {
+			fixed-height: false;
+			lines: $MAX_LINES;
+			dynamic: true;}"
+ALL_CAT="[All]"
+TITLE=""
+
+# new line separated list
+desired="Favorites
+Settings
+Development
+Documentation
+Education
+System
+Network
+Utility
+Graphics
+Office
+AudioVideo
+Accessories
+Multimedia
+Internet"
+
+present=$(grep Categories /usr/share/applications/*.desktop \
+			| cut -d'=' -f2 \
+			| sed 's/;/\n/g' \
+			| LC_COLLATE=POSIX sort --ignore-case --unique \
+			| grep "$desired" -F -x -)
+
+menulist="$ALL_CAT
+$present"
+
+# determine max category name length
+
+set -- $menulist
+maxlength=1
+while [ $# -gt 0 ] ; do
+	if [ ${#1} -gt $maxlength ] ; then
+		maxlength=${#1}
+	fi
+	shift
+done
+
+maxlength=$(($maxlength+5))
+
+while true; do
+	category=$(echo "$menulist" \
+			| rofi	-dmenu \
+					-i \
+					-no-custom \
+					-select "$category" \
+					-p "$TITLE" \
+					-theme-str "$THEME
+						#window {
+							width: ${maxlength}ch;
+							x-offset: 0;}
+						$DISABLE_CAT_INPUTLINE")
+
+	if [ -z "$category" ] ; then
+		exit
+	fi
+
+	# determine vertical position of submenu
+	yoffset=$Y_OFFSET
+	set -- $menulist
+	while [ "$category" != "$1" ] ; do
+		yoffset=$(($yoffset+1))
+		shift
+	done
+	
+	if [ "$category" = "$ALL_CAT" ] ; then
+		category=""
+	fi
+
+	sleep 0.1	# pause to avoid instant menu closing with mouse
+	
+	command=$(rofi \
+		-modi drun \
+		-show drun \
+		-drun-match-fields categories,name \
+		-run-command "echo {cmd}" \
+		-filter "$category " \
+		-no-sidebar-mode \
+		-theme-str "$THEME
+			#window {
+				x-offset: ${maxlength}ch;
+				y-offset: ${yoffset}em;}")
+
+	if [ -n "$command" ] ; then
+		eval "$command" &
+		exit
+	fi
+done
