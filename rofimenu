@@ -106,102 +106,38 @@ Exit() {
 ##  MAIN SCRIPT STARTS HERE  ##
 ###############################
 
-option="${1:--show}"
-shift
+if [ $# -gt 0 ] ; then
+	option="$1"
+	shift
+else
+	option="-show"
+fi
 
 case "$option" in
 
 	##############################
 	# no options or option "-show"
 	"-show")
-		sleep 0.01		# pause needed when calling the script from itself so that rofi has time to close and reopen
-		showmodi="$1"
-		shift
-		
-		if [ -z "$showmodi" ] ; then
+		# pause needed when calling the script from itself
+		# so that rofi has time to close and reopen
+		sleep 0.01; 
+		if [ $# -gt 0 ] ; then
+			showmodi="$1"
+			shift
+		else
 			showmodi="${modilist%%,*}"	# first modi from list
 			showmodi="${showmodi%%:*}"	# modi name if modi is custom
 		fi
 
 		#TODO determine element length and modi lenght
 		
-		modilength=15
-		elementlength=20
-
-		BGC="#222D32E8"
-		SEL="#00BCD4FF"
-		EXTRA_WIDTH=5	# extra window width in characters
-		HPADDING=1	# horizontal padding in characters for modi buttons
-		VPADDING=2	# vertical padding in pixels for buttons and list elements
-		
-		buttonwidth=$(( 2 * $HPADDING + $modilength + 1 ))
-		windowwidth=$(( $buttonwidth + $elementlength + 2 * $HPADDING + $EXTRA_WIDTH ))
-
-
-		ROFI_THEME="
-			* {
-				margin:			0;
-				padding:		0;
-				border:			0;
-				spacing:		0;
-			}
-			#window {
-				location:		northwest;
-				anchor:			northwest;
-				x-offset:		0;
-				y-offset:		24;
-				width:			${windowwidth}ch;
-				background-color:		#0000;
-			}
-			#mainbox {
-				orientation:	horizontal;
-				children:		[ sidebar, vertibox ];
-			}
-			#vertibox {
-				orientation:	vertical;
-				children:		[ inputbar, listview ];
-				background-color:	$BGC;
-			}
-			#inputbar {
-				children:		[ entry, ci ];
-			}
-			#entry {
-				padding:		$VPADDING ${HPADDING}ch;
-			}
-			#listview {
-				lines:			20;
-				fixed-height:	false;
-				dynamic:		false;
-				scrollbar:		true;
-			}
-			#scrollbar {
-				width:			${HPADDING}ch;
-				handle-color:	$SEL;
-			}
-			#element {
-				padding:		$VPADDING 0;
-			}
-			#sidebar {
-				orientation:	vertical;
-			}
-			#button {
-				horizontal-align:	0;
-				expand:			false;
-				padding:		$VPADDING ${HPADDING}ch;
-				width:			${buttonwidth}ch;
-				background-color:	$BGC;
-			}"
-
 		rofi	-modi "$modilist" \
 				-show "$showmodi" \
-				-sidebar-mode \
-				-theme-str "$ROFI_THEME"\
+				-config "~/.config/rofi/rofimenu.rasi" \
 				-display-drun "$DRUN" \
 				-display-run "$RUN" \
 				"$@"			# the rest of command line is passed to rofi
 				;;
-
-
 
 	###################################
 	# option "-menu" 
