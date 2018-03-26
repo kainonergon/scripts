@@ -162,10 +162,21 @@ configuration {
 }
 
 * {
-    background:                  #292f34FF;
-    background-color:            #292f3400;
-    foreground:                  #F6F9FFFF;
-    selected:                    #1ABB9BFF;
+//	colors match bspwm edition theme
+
+	background:                  #292f34FF;
+	background-color:            #292f3400;
+	foreground:                  #F6F9FFFF;
+	selected:                    #1ABB9BFF;
+	selected-foreground:         @foreground;
+
+//	colors match Adapta Nokto theme
+
+//	background:                  #222D32E8;
+//	background-color:            #00000000;
+//	foreground:                  #CFD8DCFF;
+//	selected:                    #00BCD4FF;
+//	selected-foreground:         #FFFFFFFF;
 
     active-background:           #3A464BFF;
     urgent-background:           #800000FF;
