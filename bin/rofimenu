@@ -118,7 +118,7 @@ activate_category() {	# shows drun modi filtered with category. If no command se
 	label="$1"
 	category="$2"
 	linenumber="$3"
-	command=$($thisscript \
+	command=$(delay; $thisscript \
 				-only drun \
 				-drun-match-fields categories,name \
 				-display-drun "$label" \
