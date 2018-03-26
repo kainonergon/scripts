@@ -30,7 +30,7 @@ if ! [ -f "$ROFIMENU_CONFIG" ] ; then
 # Menu functions from this script can be used as modi like this "<menu_name>:$thisscript -menu <menu_function>"
 
 # pause needed for smooth transition when menu command refers to other modi
-DELAY=0.05
+DELAY=0.07
 delay() {
 	sleep $DELAY
 }
