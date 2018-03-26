@@ -7,7 +7,8 @@ thisscript="$0"
 # Script that runs rofi in several custom rofi modi, emulating menu with submenus.
 # Only one option should be used.
 # No options or option "-show" starts rofi showing the first modi.
-# Option "-show <modi>" starts rofi showing this <modi>. The rest of command line is passed to rofi.
+# Option "-show <modi>" starts rofi showing <modi>. The rest of command line is passed to rofi.
+# Option "-only <modi>" starts rofi showing only <modi>. The rest of command line is passed to rofi.
 # Option "-menu <menu>" calls menu function <menu> and prints menu labels from each line.
 # It is used to define custom modi.
 # Option "-menu <menu> <label>" calls menu function <menu> and executes command from line with <label>.
@@ -97,12 +98,12 @@ Categories() {
 }
 
 activate_category() {	# shows drun modi filtered with category. If no command selected, returns to categories modi
-	category=$1
+	category="$1"
 	command=$($thisscript \
-		-show drun \
-		-drun-match-fields categories,name \
-		-filter "$category " \
-		-run-command "echo {cmd}")
+			-only drun \
+			-drun-match-fields categories,name \
+			-filter "$category " \
+			-run-command "echo {cmd}")
 	if [ -n "$command" ] ; then
 		eval "$command" &
 		exit
@@ -273,6 +274,12 @@ else
 fi
 
 case "$option" in
+
+	#####################
+	# show only this modi
+	"-only")
+		modilist=$(echo $modilist|grep -o "${1}[^,]*")
+		;&
 
 	##############################
 	# no options or option "-show"
