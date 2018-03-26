@@ -29,6 +29,12 @@ if ! [ -f "$ROFIMENU_CONFIG" ] ; then
 # Custom modi format: "modi_name:modi_script".
 # Menu functions from this script can be used as modi like this "<menu_name>:$thisscript -menu <menu_function>"
 
+# pause needed for smooth transition when menu command refers to other modi
+DELAY=0.05
+delay() {
+	sleep $DELAY
+}
+
 # define modi labels for menu
 
 FAV=" Favourites"
@@ -50,10 +56,10 @@ $EXIT:$thisscript -menu ${EXIT#* }"
 
 Menu_settings() {
 	echo " Edit menu config:$GUI_EDITOR $ROFIMENU_CONFIG && $thisscript -show \'$SET\'"
-	echo " Reset menu config:rm $ROFIMENU_CONFIG && $thisscript -show \'$SET\'"
+	echo " Reset menu config:rm $ROFIMENU_CONFIG && delay; $thisscript -show \'$SET\'"
 	echo "───────────────────:true"
 	echo " Edit menu theme:$GUI_EDITOR $ROFI_CONFIG && $thisscript -show \'$SET\'"
-	echo " Reset menu theme:rm $ROFI_CONFIG && $thisscript -show \'$SET\'"
+	echo " Reset menu theme:rm $ROFI_CONFIG && delay; $thisscript -show \'$SET\'"
 }
 
 Favourites() {
@@ -62,14 +68,23 @@ Favourites() {
 	echo " Browser:default-browser"
 	echo " Settings:default-terminal -e bmenu"
 	echo " Search:rofi-finder.sh"
-	echo " Exit:$thisscript -show \'$EXIT\'"		# This refers to modi from the same script
+	echo " Exit:delay; $thisscript -show \'$EXIT\'"		# This refers to modi from the same script
+}
+
+Exit() {
+	echo " lock:screenlock"
+	echo " suspend:systemctl suspend"
+	echo " hibernate:systemctl hibernate"
+	echo " logout:xdotool key --clearmodifiers super+shift+q"
+	echo " reboot:systemctl reboot"
+	echo " poweroff:systemctl poweroff"
 }
 
 Categories() {
-IFS='
+	IFS='
 '
-# Newline separated list, each line has format "[symbol ][alias:]category"
-# Category with alias will be shown in menu under that alias
+	# Newline separated list, each line has format "[symbol ][alias:]category"
+	# Category with alias will be shown in menu under that alias
 desired="\
  Favorites
  Accessories:Utility
@@ -88,11 +103,13 @@ desired="\
 		| sed 's/;/\n/g' \
 		| LC_COLLATE=POSIX sort --ignore-case --unique)"
 
+	linenumber=0
 	for line in $desired ; do
 		category="${line##*[ :]}"
 		label="${line%:*}"
 		if [ $(echo "$present"|grep -w -c "$category") -gt 0 ] ; then
-			echo "$label:activate_category \"$label\" $category"
+			echo "$label:activate_category \"$label\" $category $linenumber"
+			linenumber=$(($linenumber+1))
 		fi
 	done
 }
@@ -100,28 +117,34 @@ desired="\
 activate_category() {	# shows drun modi filtered with category. If no command selected, returns to categories modi
 	label="$1"
 	category="$2"
+	linenumber="$3"
 	command=$($thisscript \
-			-only drun \
-			-drun-match-fields categories,name \
-			-display-drun "$label" \
-			-filter "$category " \
-			-run-command "echo {cmd}")
+				-only drun \
+				-drun-match-fields categories,name \
+				-display-drun "$label" \
+				-filter "$category " \
+				-run-command "echo {cmd}")
 	if [ -n "$command" ] ; then
 		eval "$command" &
 		exit
 	fi
-	$thisscript\
-		-show "$CAT"
-	#TODO set selection to that category (if possible with rofi not in dmenu mode)
-}
+	# return to categories modi. No delay needed
+	$thisscript -show "$CAT" &
+	
+	if [ $linenumber -eq 0 ] ; then	# if the category is on the top line
+		exit
+	fi
 
-Exit() {
-	echo " lock:screenlock"
-	echo " suspend:systemctl suspend"
-	echo " hibernate:systemctl hibernate"
-	echo " logout:xdotool key --clearmodifiers super+shift+q"
-	echo " reboot:systemctl reboot"
-	echo " poweroff:systemctl poweroff"
+	# move rofi selection down by linenumber
+	keys=""
+	while [ $linenumber -gt 0 ] ; do
+		keys="$keys Tab"
+		linenumber=$(($linenumber-1))
+	done	
+	##TODO wait until rofi can take input
+	delay
+	delay
+	xdotool search --class rofi key --delay 0 $keys
 }
 _EOF_
 fi
@@ -278,13 +301,13 @@ fi
 case "$option" in
 
 	#####################
-	# show only this modi
+	## show only this modi
 	"-only")
 		modilist=$(echo $modilist|grep -o "${1}[^,]*")
 		;&
 
 	##############################
-	# no options or option "-show"
+	## no options or option "-show"
 	"-show")
 		if [ $# -gt 0 ] ; then
 			showmodi="$1"
@@ -294,21 +317,21 @@ case "$option" in
 			showmodi="${showmodi%%:*}"	# modi name if modi is custom
 		fi
 
-		#TODO determine element length and modi lenght
+		##TODO determine element length and modi lenght
 
-		# pause needed when calling the script from itself
-		# so that rofi has time to close and reopen
-		#TODO add a proper check that rofi is not running
-		sleep 0.01;
-
+		## wait until rofi exits
+		while pgrep -x rofi >/dev/null 2>&1 ; do
+			delay;
+		done
 				# the rest of command line is passed to rofi
 		rofi	"$@" \
 				-modi "$modilist" \
 				-show "$showmodi" \
 				-config "$ROFI_CONFIG" \
 				-display-run "$RUN" \
-				-display-drun "$DRUN"					
-				;;
+				-display-drun "$DRUN" &
+		exit
+		;;
 
 	###################################
 	# option "-menu" 
@@ -321,6 +344,7 @@ case "$option" in
 				| while read line; do
 					echo "${line%%:*}"
 				  done
+				  exit
 				;;
 			*)	# "-menu <menu> <label>" calls <menu> function and executes command from line with <label>
 				$1 \
