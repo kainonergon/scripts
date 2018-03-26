@@ -66,22 +66,22 @@ Favourites() {
 }
 
 Categories() {
-	IFS='
+IFS='
 '
-	# Newline separated list, each line has format "[symbol ][alias:]category"
-	# Category with alias will be shown in menu under that alias
-	desired="\
-	 Favorites
-	 Accessories:Utility
-	 Development
-	 Documentation
-	 Education
-	 Graphics
-	 Internet:Network
-	 Multimedia:AudioVideo
-	 Office
-	 Settings
-	 System"
+# Newline separated list, each line has format "[symbol ][alias:]category"
+# Category with alias will be shown in menu under that alias
+desired="\
+ Favorites
+ Accessories:Utility
+ Development
+ Documentation
+ Education
+ Graphics
+ Internet:Network
+ Multimedia:AudioVideo
+ Office
+ Settings
+ System"
 
 	present="$(grep Categories /usr/share/applications/*.desktop \
 		| cut -d'=' -f2 \
@@ -92,16 +92,18 @@ Categories() {
 		category="${line##*[ :]}"
 		label="${line%:*}"
 		if [ $(echo "$present"|grep -w -c "$category") -gt 0 ] ; then
-			echo "$label:activate_category $category"
+			echo "$label:activate_category \"$label\" $category"
 		fi
 	done
 }
 
 activate_category() {	# shows drun modi filtered with category. If no command selected, returns to categories modi
-	category="$1"
+	label="$1"
+	category="$2"
 	command=$($thisscript \
 			-only drun \
 			-drun-match-fields categories,name \
+			-display-drun "$label" \
 			-filter "$category " \
 			-run-command "echo {cmd}")
 	if [ -n "$command" ] ; then
@@ -299,12 +301,13 @@ case "$option" in
 		#TODO add a proper check that rofi is not running
 		sleep 0.01;
 
-		rofi	-modi "$modilist" \
+				# the rest of command line is passed to rofi
+		rofi	"$@" \
+				-modi "$modilist" \
 				-show "$showmodi" \
 				-config "$ROFI_CONFIG" \
-				-display-drun "$DRUN" \
 				-display-run "$RUN" \
-				"$@"			# the rest of command line is passed to rofi
+				-display-drun "$DRUN"					
 				;;
 
 	###################################
