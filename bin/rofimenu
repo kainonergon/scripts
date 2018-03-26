@@ -34,6 +34,7 @@ FAV=" Favourites"
 DRUN=" Applications"
 CAT=" Categories"
 RUN=" Run"
+SET=" Menu settings"
 EXIT=" Exit"
 
 modilist="\
@@ -41,12 +42,20 @@ $FAV:$thisscript -menu ${FAV#* },\
 drun,\
 $CAT:$thisscript -menu ${CAT#* },\
 run,\
+$SET:$thisscript -menu Menu_settings,\
 $EXIT:$thisscript -menu ${EXIT#* }"
 
 # Menu functions print lines in format "label:command".
 
+Menu_settings() {
+	echo " Edit menu config:$GUI_EDITOR $ROFIMENU_CONFIG && $thisscript -show \'$SET\'"
+	echo " Reset menu config:rm $ROFIMENU_CONFIG && $thisscript -show \'$SET\'"
+	echo "───────────────────:true"
+	echo " Edit menu theme:$GUI_EDITOR $ROFI_CONFIG && $thisscript -show \'$SET\'"
+	echo " Reset menu theme:rm $ROFI_CONFIG && $thisscript -show \'$SET\'"
+}
+
 Favourites() {
-	echo " Edit this menu:$GUI_EDITOR $ROFIMENU_CONFIG"
 	echo " Terminal:default-terminal"
 	echo " File Manager:default-terminal -e ranger"
 	echo " Browser:default-browser"
@@ -153,18 +162,18 @@ configuration {
 }
 
 * {
-    background:                  #222D32E8;
-    background-color:            #00000000;
-    foreground:                  #CFD8DCFF;
-    selected:                    #00BCD4FF;
-    selected-foreground:         #FFFFFFFF;
+    background:                  #292f34FF;
+    background-color:            #292f3400;
+    foreground:                  #F6F9FFFF;
+    selected:                    #1ABB9BFF;
 
-    active-background:           #00BCD420;
+    active-background:           #3A464BFF;
     urgent-background:           #800000FF;
-    urgent-foreground:           @selected-normal-foreground;
+    urgent-foreground:           @foreground;
     selected-urgent-background:  @urgent-foreground;
     selected-urgent-foreground:  @urgent-background;
 
+//    font:                        "xos4 Terminus 18px";
     font:                        "Knack Nerd Font 16px";
     text-color:                  @foreground;
 
@@ -173,6 +182,47 @@ configuration {
     padding:                     0px;
     spacing:                     0px;
     addpadding:                  2px 1ch;
+}
+window {
+	location:		northwest;
+	anchor:			northwest;
+	x-offset:		0;
+	y-offset:		24;
+	width:			45ch;
+}
+mainbox {
+	orientation:	horizontal;
+	children:		[ sidebar, vertibox ];
+}
+sidebar {
+	orientation:	vertical;
+}
+button {
+	horizontal-align:	0;
+	expand:			false;
+	padding:		@addpadding;
+	width:			18ch;
+	background-color:	@background;
+}
+vertibox {
+	orientation:	vertical;
+	children:		[ inputbar, listview ];
+	background-color:	@background;
+}
+inputbar {
+	children:		[ entry, ci ];
+}
+entry {
+	padding:		@addpadding;
+}
+listview {
+	lines:			20;
+	fixed-height:	false;
+	dynamic:		false;
+	scrollbar:		true;
+}
+element {
+	padding:		@addpadding;
 }
 element.normal.active,
 element.alternate.active {
@@ -193,50 +243,9 @@ element.selected.urgent {
     background-color: @selected-urgent-background;
     text-color:       @selected-urgent-foreground;
 }
-window {
-	location:		northwest;
-	anchor:			northwest;
-	x-offset:		0;
-	y-offset:		24;
-	width:			45ch;
-}
-mainbox {
-	orientation:	horizontal;
-	children:		[ sidebar, vertibox ];
-}
-vertibox {
-	orientation:	vertical;
-	children:		[ inputbar, listview ];
-	background-color:	@background;
-}
-inputbar {
-	children:		[ entry, ci ];
-}
-entry {
-	padding:		@addpadding;
-}
-listview {
-	lines:			20;
-	fixed-height:	false;
-	dynamic:		false;
-	scrollbar:		true;
-}
 scrollbar {
 	width:			1ch;
 	handle-color:	@selected;
-}
-element {
-	padding:		@addpadding;
-}
-sidebar {
-	orientation:	vertical;
-}
-button {
-	horizontal-align:	0;
-	expand:			false;
-	padding:		@addpadding;
-	width:			18ch;
-	background-color:	@background;
 }
 _EOF_
 fi
