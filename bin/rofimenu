@@ -65,7 +65,7 @@ Menu_settings() {
 
 Favourites() {
 	echo " Terminal:default-terminal"
-	echo " File Manager:default-terminal -e ranger"
+	echo " File Manager:xdg-open ~"
 	echo " Browser:default-browser"
 	echo " Settings:default-terminal -e bmenu"
 	echo " Search:rofi-finder.sh"
@@ -82,16 +82,19 @@ Exit() {
 }
 
 Categories() {
+	SUBMENU_MARK=""
 	IFS='
 '
 	# Newline separated list, each line has format "[symbol ][alias:]category"
 	# Category with alias will be shown in menu under that alias
+	# The first entry below is an alias for " " so it shows all applications
 desired="\
+ Applications: 
  Favorites
  Accessories:Utility
  Development
- Documentation
- Education
+ Documentation
+ Education
  Graphics
  Internet:Network
  Multimedia:AudioVideo
@@ -99,6 +102,16 @@ desired="\
  Settings
  System"
 
+	# determine max line length and set tab position for subcategory mark
+	maxlength=0
+	for line in $desired ; do
+		label="${line%:*}"
+		if [ ${#label} -gt $maxlength ] ; then
+			maxlength=${#label}
+		fi
+	done
+	submenu_tab=$(($maxlength+3))
+	
 	present="$(grep Categories /usr/share/applications/*.desktop \
 		| cut -d'=' -f2 \
 		| sed 's/;/\n/g' \
@@ -107,16 +120,16 @@ desired="\
 	linenumber=0
 	for line in $desired ; do
 		category="${line##*[ :]}"
-		label="${line%:*}"
+		label="$(echo -e ${line%:*}\\t${SUBMENU_MARK} | expand -t $submenu_tab)"	## add submenu mark
 		if [ $(echo "$present"|grep -w -c "$category") -gt 0 ] ; then
-			echo "$label:activate_category \"$label\" $category $linenumber"
+			echo "$label:activate_category \"$label\" \"$category\" $linenumber"
 			linenumber=$(($linenumber+1))
 		fi
 	done
 }
 
 activate_category() {	# shows drun modi filtered with category. If no command selected, returns to categories modi
-	label="$1"
+	label="${1% *}"	# remove submenu mark
 	category="$2"
 	linenumber="$3"
 	command=$(delay; $thisscript \
@@ -153,23 +166,35 @@ activate_category() {	# shows drun modi filtered with category. If no command se
 
 DT_MODI="Desktop:$thisscript -menu Desktop"
 
+##TODO determine desktop menu width
+DT_WIDTH=180 # width in pixels
+
 Desktop() {
-	echo "Desktop menu:true"
 	echo " Terminal:default-terminal"
-	echo " File Manager:default-terminal -e ranger"
+	echo " File Manager:xdg-open ~"
 	echo " Browser:default-browser"
-	echo " Applications:$thisscript -only drun"
 	Categories
-	echo " Settings:default-terminal -e bmenu"
 	echo " Search:rofi-finder.sh"
 }
 
 DT_THEME="
+* {
+	font: \"Knack Nerd Font Mono 15px\";
+}
 #window {
-	width: 20ch;
+	width: $DT_WIDTH;
 } 
-#mainbox {
-	children: [ vertibox ];
+#sidebar {
+	enabled: false;
+}
+#listview {
+	lines: 20;
+	fixed-height: false;
+	dynamic: false;
+	scrollbar: false;
+}
+#inputbar {
+	enabled: false;
 }"
 
 ## rofi theme file can be set here 
