@@ -159,6 +159,10 @@ DT_THEME="
 #sidebar {
 	enabled:	false;
 }
+#button {
+	width:		${DT_WIDTH}ch;
+	padding:	2px 1ch;
+}
 #inputbar {
 	enabled:	false;
 }"
@@ -195,9 +199,6 @@ activate_category() {	# shows drun modi filtered with category. If no command se
 			}
 			#sidebar {
 				enabled:	true;
-			}
-			#button {
-				width:		${DT_WIDTH}ch;
 			}
 			#boxdummy {
 				enabled:	$dummy;
