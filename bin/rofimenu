@@ -145,22 +145,25 @@ Desktop() {
 	echo " Search:rofi-finder.sh"
 }
 
-##TODO determine desktop menu width
-DT_WIDTH=20 # characters
+DT_WIDTH=200		# pixels
+##TODO determine desktop menu line height according to theme
+DT_LINE_HEIGHT=23	# pixels
+
 DT_THEME="
 *{
 	lines:		20;
 	scrollbar:	false;
+	dynamic:	true;
 }
 #window {
-	width:		${DT_WIDTH}ch;
+	width:		${DT_WIDTH}px;
 	children:	[ dt-mainbox ];
 }
 #sidebar {
 	enabled:	false;
 }
 #button {
-	width:		${DT_WIDTH}ch;
+	width:		${DT_WIDTH}px;
 	padding:	2px 1ch;
 }
 #inputbar {
@@ -189,13 +192,25 @@ activate_category() {	# shows drun modi filtered with category. If no command se
 		else
 			dummy="false"
 		fi
+
+		# adjust X if too close to the right side of the screen
+		MAX_X=$(wattr w $(lsw -r) )
+		anchor="north"
+		if [ $X -gt $((${MAX_X}-${DT_WIDTH}*2)) ] ; then
+			anchor="${anchor}east"
+			X=$MAX_X
+		else
+			anchor="${anchor}west"
+		fi
+
 		theme="$DT_THEME
 			* {
 				x-offset:	$X;
 				y-offset:	$Y;
+				anchor:		$anchor;
 			}
 			#window {
-				width:		$((${DT_WIDTH}*2))ch;
+				width:		$((${DT_WIDTH}*2));
 			}
 			#sidebar {
 				enabled:	true;
@@ -471,12 +486,29 @@ case "$option" in
 				shift 2
 			else
 				eval $(xdotool getmouselocation --shell)
-				#TODO adjust X and Y if too close to the right side or the bottom of the screen
 			fi
+
+			# adjust X and Y if too close to the right side or the bottom of the screen
+			MAX_X=$(wattr w $(lsw -r) )
+			MAX_Y=$(wattr h $(lsw -r) )
+			linesnumber=$(Desktop | wc -l)
+			anchor="north"
+			if [ $Y -gt $(( $MAX_Y - $DT_LINE_HEIGHT * $linesnumber )) ] ; then
+				anchor="south"
+				Y=$MAX_Y
+			fi
+			if [ $X -gt $(( $MAX_X - $DT_WIDTH )) ] ; then
+				anchor="${anchor}east"
+				X=$MAX_X
+			else
+				anchor="${anchor}west"
+			fi
+
 			rofitheme="$DT_THEME
 				* {
-					x-offset: $X;
-					y-offset: $Y;
+					x-offset:	$X;
+					y-offset:	$Y;
+					anchor:		$anchor;
 				}"
 			;;
 	esac
